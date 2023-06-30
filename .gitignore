@@ -1,0 +1,6 @@
+.log
+.vscode
+custed-server
+.secret
+**/.DS_Store
+.db

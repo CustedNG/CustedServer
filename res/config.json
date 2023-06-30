@@ -1,0 +1,75 @@
+{
+    "notify": [
+        {
+            "version": 713,
+            "content": "如有成绩查询需求，请进入教务系统查询。教务系统中可开具学校认证的盖章成绩单。发布于：4月1日"
+        }
+    ],
+    "jw_url": [
+        "https://jwgls0.cust.edu.cn",
+        "https://jwgls1.cust.edu.cn",
+        "https://jwgls2.cust.edu.cn",
+        "https://jwgls3.cust.edu.cn"
+    ],
+    "update": {
+        "version": {
+            "android": 749,
+            "ios": 749
+        },
+        "priority": {
+            "android": 2,
+            "ios": 2
+        },
+        "url": {
+            "android": "https://cdn3.cust.app/uploads/CustedNG_749_Arm64.apk",
+            "ios": "https://apps.apple.com/app/id1483085363"
+        },
+        "changelog": {
+            "android": "删除彩蛋",
+            "ios": "删除彩蛋"
+        }
+    },
+    "not_show_real_ui": [
+        999
+    ],
+    "use_kbpro": [
+        "691", "695-699"
+    ],
+    "tester_list": [
+        {
+            "name": "rilu",
+            "url": "https://github.com/ItsukaRilu"
+        },
+        {
+        	"name": "愚人杰769",
+        	"url": "https://b23.tv/7Gjyam7"
+        },
+        {
+        	"name": "Rei",
+        	"url": "https://www.missevan.com/3302533/#"
+        }
+    ],
+    "banner": {
+        "img_url": "https://cdn3.cust.app/uploads/banner/2022hire.png",
+        "action_url": "https://cust.cc/hire"
+    },
+    "have_exam": true,
+    "school_calendar": [
+        {
+            "term": "20221",
+            "pic_url": "https://cdn3.cust.app/uploads/calendar/20221.png",
+            "str_summary": ""
+        },
+        {
+            "term": "20222",
+            "pic_url": "https://cdn3.cust.app/uploads/calendar/20222.png",
+            "str_summary": ""
+        },
+        {
+            "term": "20231",
+            "pic_url": "https://cdn3.cust.app/uploads/calendar/20231.jpg",
+            "str_summary": ""
+        }
+    ],
+    "semester_start": [2023, 2, 27]
+}

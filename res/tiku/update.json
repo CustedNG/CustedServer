@@ -1,0 +1,9 @@
+{
+    "newest": 118,
+    "android": "https://cdn3.cust.app/uploads/ToastTiku_120_Arm64.apk",
+    "ios": "https://apps.apple.com/app/id1580345312",
+    "iosbuild": 109,
+    "androidbuild": 120,
+    "min": 114,
+    "changelog": "！注意：从118以下版本更新会清空所有数据"
+}

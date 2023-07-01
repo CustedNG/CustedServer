@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	glc "git.lolli.tech/lollipopkit/go_lru_cacher"
-	ndb "git.lolli.tech/lollipopkit/nano-db-sdk-go"
+	glc "github.com/lollipopkit/go-lru-cacher"
+	ndb "github.com/lollipopkit/nano-db-sdk-go"
 	"github.com/LollipopKit/custed-server/config"
 	"github.com/LollipopKit/custed-server/consts"
 	"github.com/LollipopKit/custed-server/logger"
@@ -25,7 +25,7 @@ var (
 	DB = ndb.NewDB(config.DBUrl, consts.DBPwd)
 
 	// map[string]TokenItem : {ID: token}
-	tokenItemsCacher = glc.NewCacher(20000)
+	tokenItemsCacher = glc.NewCacher[model.TokenItem](20000)
 
 	// Errors
 	ErrBadScheduleJson   = errors.New("bad schedule json")
@@ -44,11 +44,7 @@ func GetTokenItems(force bool) ([]model.TokenItem, error) {
 	if tisLen != 0 && !force {
 		tis := make([]model.TokenItem, tisLen)
 		for _, token := range tokenItemsCacher.Values() {
-			t, ok := token.(model.TokenItem)
-			if !ok {
-				return tis, ErrTokenItemCast
-			}
-			tis = append(tis, t)
+			tis = append(tis, *token)
 		}
 		return tis, nil
 	}
@@ -87,7 +83,7 @@ func GetTokenItems(force bool) ([]model.TokenItem, error) {
 
 	// 将在线获取的tokens放入缓存
 	for _, token := range tis {
-		tokenItemsCacher.Set(token.Id, token)
+		tokenItemsCacher.Set(token.Id, &token)
 	}
 	return tis, nil
 }
@@ -97,11 +93,7 @@ func GetToken(id string, cache bool) (*model.TokenItem, error) {
 	// 优先在本地缓存中查找
 	t, ok := tokenItemsCacher.Get(id)
 	if ok {
-		tt, ok := t.(model.TokenItem)
-		if !ok {
-			return &tt, ErrTokenCast
-		}
-		return &tt, nil
+		return t, nil
 	}
 
 	// 本地无数据，从数据库中获取
@@ -111,13 +103,7 @@ func GetToken(id string, cache bool) (*model.TokenItem, error) {
 	}
 
 	tokenItemsCacher.Set(id, t)
-
-	tt, ok := t.(model.TokenItem)
-	if !ok {
-		return nil, ErrTokenItemCast
-	}
-
-	return &tt, nil
+	return t, nil
 }
 
 // 将现有token item与新数据合并
@@ -150,11 +136,7 @@ func UpdateToken(token, ip, id string, platform int) error {
 	// 先在内存查找
 	t, ok := tokenItemsCacher.Get(id)
 	if ok {
-		tt, ok = t.(model.TokenItem)
-		if !ok {
-			return ErrTokenItemCast
-		}
-		tt = combineTokens(tt, token, ip, id, platform)
+		tt = combineTokens(*t, token, ip, id, platform)
 	} else {
 		// 从数据库读
 		err := DB.Read("custed/token/"+id, &tt)
@@ -179,7 +161,7 @@ func UpdateToken(token, ip, id string, platform int) error {
 	}
 	tt.LastTime = time.Now().String()
 
-	tokenItemsCacher.Set(id, tt)
+	tokenItemsCacher.Set(id, &tt)
 	return DB.Write("custed/token/"+id, tt)
 }
 

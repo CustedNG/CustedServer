@@ -26,7 +26,7 @@ func init() {
 	// 检查苹果推送证书加载是否存在问题
 	if errLoadPushCert != nil {
 		logger.E("[api.push] load push cert err: ", errLoadPushCert)
-		panic("[api.push] loadCert err: " + errLoadPushCert.Error())
+		// panic("[api.push] loadCert err: " + errLoadPushCert.Error())
 	}
 }
 

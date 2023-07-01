@@ -3,10 +3,10 @@ module github.com/LollipopKit/custed-server
 go 1.18
 
 require (
-	git.lolli.tech/lollipopkit/go_lru_cacher v0.0.4
-	git.lolli.tech/lollipopkit/nano-db-sdk-go v0.0.9
 	github.com/json-iterator/go v1.1.12
 	github.com/labstack/echo/v4 v4.9.0
+	github.com/lollipopkit/go-lru-cacher v0.2.0
+	github.com/lollipopkit/nano-db-sdk-go v0.0.0-20230701022201-9c596a30020e
 	github.com/sideshow/apns2 v0.23.0
 )
 

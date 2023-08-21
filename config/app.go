@@ -10,7 +10,7 @@ var (
 	// 开学时间时间
 	SemesterStartTime time.Time
 	// 数据库链接
-	DBUrl = "http://localhost:3777/"
+	DBUrl = "http://localhost:3770/"
 )
 
 // 计算开学到现在位于第几周

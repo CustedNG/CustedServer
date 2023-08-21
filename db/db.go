@@ -8,21 +8,21 @@ import (
 	"sync"
 	"time"
 
-	glc "github.com/lollipopkit/go-lru-cacher"
-	ndb "github.com/lollipopkit/nano-db-sdk-go"
 	"github.com/LollipopKit/custed-server/config"
 	"github.com/LollipopKit/custed-server/consts"
 	"github.com/LollipopKit/custed-server/logger"
 	"github.com/LollipopKit/custed-server/model"
 	"github.com/LollipopKit/custed-server/utils"
 	jsoniter "github.com/json-iterator/go"
+	glc "github.com/lollipopkit/go-lru-cacher"
+	ndb "github.com/lollipopkit/nano-db-sdk-go"
 )
 
 var (
 	json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// DB
-	DB = ndb.NewDB(config.DBUrl, consts.DBPwd)
+	DB = ndb.NewClient(config.DBUrl, consts.DBPwd)
 
 	// map[string]TokenItem : {ID: token}
 	tokenItemsCacher = glc.NewCacher[model.TokenItem](20000)
@@ -50,7 +50,13 @@ func GetTokenItems(force bool) ([]model.TokenItem, error) {
 	}
 
 	// 否则从数据库获取
-	ids, err := DB.Files("custed", "token")
+	idsData, err := DB.Read("custed", "token")
+	if err != nil {
+		return []model.TokenItem{}, err
+	}
+
+	var ids []string
+	err = json.Unmarshal(idsData, &ids)
 	if err != nil {
 		return []model.TokenItem{}, err
 	}
@@ -69,9 +75,14 @@ func GetTokenItems(force bool) ([]model.TokenItem, error) {
 		go func() {
 			for id := range ch {
 				var token model.TokenItem
-				err := DB.Read("custed/token/"+id, &token)
+				data, err := DB.Read("custed", "token", id)
 				if err != nil {
 					logger.E("getTokenItems: read token error: %s", err)
+					continue
+				}
+				err = json.Unmarshal(data, &token)
+				if err != nil {
+					logger.E("getTokenItems: marshal error: %s", err)
 					continue
 				}
 				tis = append(tis, token)
@@ -97,7 +108,12 @@ func GetToken(id string, cache bool) (*model.TokenItem, error) {
 	}
 
 	// 本地无数据，从数据库中获取
-	err := DB.Read("custed/token/"+id, &t)
+	data, err := DB.Read("custed", "token", id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, &t)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +155,12 @@ func UpdateToken(token, ip, id string, platform int) error {
 		tt = combineTokens(*t, token, ip, id, platform)
 	} else {
 		// 从数据库读
-		err := DB.Read("custed/token/"+id, &tt)
+		data, err := DB.Read("custed", "token", id)
 		if err == nil {
+			err = json.Unmarshal(data, &tt)
+			if err != nil {
+				return err
+			}
 			tt = combineTokens(tt, token, ip, id, platform)
 		} else {
 			// 如果不存在，则新建
@@ -162,88 +182,120 @@ func UpdateToken(token, ip, id string, platform int) error {
 	tt.LastTime = time.Now().String()
 
 	tokenItemsCacher.Set(id, &tt)
-	return DB.Write("custed/token/"+id, tt)
+
+	data, err := json.Marshal(tt)
+	if err != nil {
+		return err
+	}
+	return DB.Write("custed", "token", id, data)
 }
 
 // 更新课表
 func UpdateSchedule(schedule model.JwSchedule, id string) error {
-	return DB.Write("custed/schedule/"+id, schedule)
+	data, err := json.Marshal(schedule)
+	if err != nil {
+		return err
+	}
+	return DB.Write("custed", "schedule", id, data)
 }
 
 // 更新考试表
 func UpdateExam(id string, exam model.JwExam) error {
-	return DB.Write("custed/exam/"+id, exam)
+	data, err := json.Marshal(exam)
+	if err != nil {
+		return err
+	}
+
+	return DB.Write("custed", "exam", id, data)
 }
 
 // 更新成绩
 func UpdateGrade(id string, grade model.JwGrade) error {
-	return DB.Write("custed/grade/"+id, grade)
+	data, err := json.Marshal(grade)
+	if err != nil {
+		return err
+	}
+
+	return DB.Write("custed", "grade", id, data)
 }
 
 // 更新kbpro
 func UpdateKBPro(id string, schedule model.JwKBPro) error {
-	return DB.Write("custed/schedule-kbpro/"+id, schedule)
+	data, err := json.Marshal(schedule)
+	if err != nil {
+		return err
+	}
+
+	return DB.Write("custed", "schedule-kbpro", id, data)
 }
 
 // 获取su的用户名列表
 func GetSuperUserNames() ([]string, error) {
 	var sus []string
-	err := DB.Read("custed/data/"+consts.SuperUserListKey, &sus)
+	data, err := DB.Read("custed", "data", consts.SuperUserListKey)
 	if err != nil {
 		return []string{}, err
 	}
 
-	return sus, nil
+	return sus, json.Unmarshal(data, &sus)
 }
 
 // 获取kbpro
 func GetKBPro(id string) (model.JwKBPro, error) {
 	var schedule model.JwKBPro
-	err := DB.Read("custed/schedule-kbpro/"+id, &schedule)
+	data, err := DB.Read("custed", "schedule-kbpro", id)
 	if err != nil {
 		return nil, err
 	}
-	return schedule, nil
+	return schedule, json.Unmarshal(data, &schedule)
 }
 
 // 获取课表
 func GetSchedule(id string) (model.JwSchedule, error) {
 	var schedule model.JwSchedule
-	err := DB.Read("custed/schedule/"+id, &schedule)
+	data, err := DB.Read("custed", "schedule", id)
 	if err != nil {
 		return model.JwSchedule{}, err
 	}
-	return schedule, nil
+	return schedule, json.Unmarshal(data, &schedule)
 }
 
 // 获取成绩
 func GetGrade(id string) (model.JwGrade, error) {
 	var grade model.JwGrade
-	err := DB.Read("custed/grade/"+id, &grade)
+	data, err := DB.Read("custed", "grade", id)
 	if err != nil {
 		return model.JwGrade{}, err
 	}
-	return grade, nil
+	return grade, json.Unmarshal(data, &grade)
 }
 
 // 获取考试
 func GetExam(id string) (model.JwExam, error) {
 	var exam model.JwExam
-	err := DB.Read("custed/exam/"+id, &exam)
+	data, err := DB.Read("custed", "exam", id)
 	if err != nil {
 		return model.JwExam{}, err
 	}
-	return exam, nil
+	return exam, json.Unmarshal(data, &exam)
 }
 
 // 更新用户是否开启课程推送
 func UpdateUsersEnableSchedulePush(users []string) error {
-	return DB.Write("custed/data/"+consts.UsersEnableSchedulePushKey, users)
+	data, err := json.Marshal(users)
+	if err != nil {
+		return err
+	}
+	return DB.Write("custed", "data", consts.UsersEnableSchedulePushKey, data)
 }
 
 // 获取用户是否开启推送
 func GetUsersEnableSchedulePush() (users []string, err error) {
-	err = DB.Read("custed/data/"+consts.UsersEnableSchedulePushKey, &users)
+	data, err := DB.Read("custed", "data", consts.UsersEnableSchedulePushKey)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &users)
 	return
 }
 
@@ -253,7 +305,7 @@ func GetNextLesson(id string, debug bool) (model.NextLesson, error) {
 	if config.CalculateWeeksOfSemester(now) < 0 {
 		return model.NextLesson{}, ErrTodayNoMoreLesson
 	}
-	
+
 	for idx := range consts.Holidays {
 		h := &consts.Holidays[idx]
 		if *&h.From.Year == now.Year() && *&h.From.Month == int(now.Month()) && *&h.From.Day == now.Day() {

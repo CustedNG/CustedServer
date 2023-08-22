@@ -2,8 +2,9 @@ package api
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ var (
 func init() {
 	go func() {
 		for {
-			data, err := ioutil.ReadFile("res/config.json")
+			data, err := os.ReadFile("res/config.json")
 			if err != nil {
 				logger.E("[api.init] read config.json failed: %s", err.Error())
 				goto SLEEP
@@ -121,7 +122,7 @@ func UpdateSchedule(c echo.Context) error {
 		return invalidBody(c, "state code is not 0")
 	}
 
-	user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	err = db.UpdateSchedule(*scheduleModel, user)
 	if err != nil {
 		logger.E("[api.UpdateSchedule] update course schedule failed: %s", err.Error())
@@ -144,8 +145,8 @@ func GetSchedule(c echo.Context) error {
 	}
 
 	// 增加学期，eg：2019003373 => 2019003373-20222
-	if !strings.Contains(user, "-") {
-		user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	if !strings.Contains(user, ".") {
+		user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	}
 
 	schedule, err := db.GetSchedule(user)
@@ -163,7 +164,7 @@ func GetNextLesson(c echo.Context) error {
 	if id == "" {
 		return invalidParam(c, "id", "为空")
 	}
-	id = fmt.Sprintf("%s-%s", id, utils.GetTerm())
+	id = fmt.Sprintf("%s.%s", id, utils.GetTerm())
 
 	lesson, err := db.GetNextLesson(id, false)
 	if err == db.ErrTodayNoMoreLesson {
@@ -195,7 +196,7 @@ func UpdateExam(c echo.Context) error {
 		return invalidBody(c, "state code is not 0")
 	}
 
-	user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	err = db.UpdateExam(user, exam)
 	if err != nil {
 		logger.E("[api.UpdateExam] update exam failed: %s", err.Error())
@@ -216,8 +217,8 @@ func GetExam(c echo.Context) error {
 		user = c.FormValue("id")
 	}
 
-	if !strings.Contains(user, "-") {
-		user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	if !strings.Contains(user, ".") {
+		user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	}
 
 	exam, err := db.GetExam(user)
@@ -317,7 +318,7 @@ func VerifyUser(c echo.Context) error {
 		return ok(c)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.E("[api.VerifyUser] read body failed: %s", err.Error())
 		return serverHTTPRequestFailed(c, "read body failed")
@@ -337,7 +338,7 @@ func UpdateKBPro(c echo.Context) error {
 	lessons := new(model.JwKBPro)
 	err := c.Bind(lessons)
 	if err != nil {
-		body, err := ioutil.ReadAll(c.Request().Body)
+		body, err := io.ReadAll(c.Request().Body)
 		if err != nil {
 			logger.E("[api.UpdateKBPro] read body failed: %s", err.Error())
 			return internalError(c, err.Error())
@@ -346,7 +347,7 @@ func UpdateKBPro(c echo.Context) error {
 		return invalidJson(c, err.Error())
 	}
 
-	user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	err = db.UpdateKBPro(user, *lessons)
 	if err != nil {
 		logger.E("[api.UpdateKBPro] update kbpro failed: %s", err.Error())
@@ -366,8 +367,8 @@ func GetKBPro(c echo.Context) error {
 	if isSuperUser(user) {
 		user = c.FormValue("id")
 	}
-	if !strings.Contains(user, "-") {
-		user = fmt.Sprintf("%s-%s", user, utils.GetTerm())
+	if !strings.Contains(user, ".") {
+		user = fmt.Sprintf("%s.%s", user, utils.GetTerm())
 	}
 
 	schedule, err := db.GetKBPro(user)

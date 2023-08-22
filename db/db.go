@@ -226,7 +226,7 @@ func UpdateKBPro(id string, schedule model.JwKBPro) error {
 		return err
 	}
 
-	return DB.Write("custed", "schedule-kbpro", id, data)
+	return DB.Write("custed", "kbpro", id, data)
 }
 
 // 获取su的用户名列表
@@ -243,7 +243,7 @@ func GetSuperUserNames() ([]string, error) {
 // 获取kbpro
 func GetKBPro(id string) (model.JwKBPro, error) {
 	var schedule model.JwKBPro
-	data, err := DB.Read("custed", "schedule-kbpro", id)
+	data, err := DB.Read("custed", "kbpro", id)
 	if err != nil {
 		return nil, err
 	}
